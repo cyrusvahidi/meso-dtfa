@@ -9,7 +9,6 @@
 <br>
 
 <img src="docs/assets/AM_FM_delta_chirps.png">
-<img src="docs/assets/jtfs_filters.png">
 
 # Installing this package
 * cuda 11.5
