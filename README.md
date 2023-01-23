@@ -15,6 +15,7 @@
 * python 3.8.2
 ```bash
 pip install -editable .
+pip install https://github.com/kymatio/kymatio.git
 ```
 
 </div>
