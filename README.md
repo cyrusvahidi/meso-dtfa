@@ -2,7 +2,7 @@
 
 # Mesostructures: Beyond Spectrogram Loss in Differentiable Time-Frequency Analysis
 
-[Cyrus Vahidi](cyruvahidi.com), Han Han, Changhong Wang and [Vincent Lostanlen](lostanlen.com)
+[Cyrus Vahidi](cyruvahidi.com), Han Han, Changhong Wang, George Fazekas, Mathieu Lagrange and [Vincent Lostanlen](lostanlen.com)
 
 [![arXiv]()]()
 
