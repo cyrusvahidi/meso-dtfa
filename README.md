@@ -4,7 +4,7 @@
 
 [Cyrus Vahidi](cyruvahidi.com), Han Han, Changhong Wang and [Vincent Lostanlen](lostanlen.com)
 
- [![arXiv]()]()
+[![arXiv]()]()
 
 <br>
 
