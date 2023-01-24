@@ -28,7 +28,7 @@ In this paper, we formulate and address the problem of mesostructural audio mode
 By exposing the sensitivity of short-time spectral distances to time alignment, we motivate the need for a time-invariant and multiscale differentiable time--frequency model of similarity at the level of both local spectra and spectrotemporal modulations. 
 
 ## Citation
-If you use meso-dtfa in your work please consider citing us.
+If you use `meso-dtfa` in your work please consider citing us.
 ```
 
 ```
