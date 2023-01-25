@@ -6,6 +6,8 @@
 
 [![arXiv](http://img.shields.io/badge/paper-arxiv.2204.08269-B31B1B.svg)](https://arxiv.org/abs/2301.10183)
 
+[![Kymatio](https://avatars.githubusercontent.com/u/45135504?s=200&v=4)](github.com/kymatio/kymatio)
+
 <br>
 
 <img src="docs/assets/AM_FM_delta_chirps.png">
