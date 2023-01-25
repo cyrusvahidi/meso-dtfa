@@ -4,7 +4,7 @@
 
 [Cyrus Vahidi](cyruvahidi.com), Han Han, Changhong Wang, George Fazekas, Mathieu Lagrange and [Vincent Lostanlen](lostanlen.com)
 
-[![arXiv]()]()
+[![arXiv](http://img.shields.io/badge/paper-arxiv.2204.08269-B31B1B.svg)](https://arxiv.org/abs/2301.10183)
 
 <br>
 
