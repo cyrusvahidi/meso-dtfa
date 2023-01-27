@@ -24,11 +24,24 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     n_input = sr * duration
 
     theta_target = thetas[target_idx].clone().detach().requires_grad_(False)
-    target = generate_am_chirp([f0, theta_target[0], theta_target[1]], sr=sr, duration=duration).cuda().detach()
+    target = (
+        generate_am_chirp(
+            [f0, theta_target[0], theta_target[1]], sr=sr, duration=duration
+        )
+        .cuda()
+        .detach()
+    )
 
     if loss_type == "jtfs":
         loss_fn = TimeFrequencyScatteringLoss(
-            shape=(n_input,), T=2**13, Q=(8, 2), J=12, J_fr=5, F=0, Q_fr=2, format="time"        
+            shape=(n_input,),
+            T=2**13,
+            Q=(8, 2),
+            J=12,
+            J_fr=5,
+            F=0,
+            Q_fr=2,
+            format="time",
         )
         Sx_target = loss_fn.ops[0](target.cuda()).detach()
     elif loss_type == "mss":
@@ -39,32 +52,49 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     for theta in tqdm(thetas):
         am = torch.tensor(theta[0], requires_grad=True, dtype=torch.float32)
         fm = torch.tensor(theta[1], requires_grad=True, dtype=torch.float32)
-        audio = generate_am_chirp([f0, am, fm], 
-                                  sr=sr, 
-                                  duration=duration, 
-                                  delta=(2**random.randint(8, 12) if time_shift == "random" else 2**8   ) if time_shift else 0)
+        audio = generate_am_chirp(
+            [f0, am, fm],
+            sr=sr,
+            duration=duration,
+            delta=(2 ** random.randint(8, 12) if time_shift == "random" else 2**8)
+            if time_shift
+            else 0,
+        )
 
-        loss = loss_fn(audio.cuda(), Sx_target.cuda(), transform_y=False) if loss_type == "jtfs" else loss_fn(audio, target)
+        loss = (
+            loss_fn(audio.cuda(), Sx_target.cuda(), transform_y=False)
+            if loss_type == "jtfs"
+            else loss_fn(audio, target)
+        )
         loss.backward()
         losses.append(float(loss.detach().cpu().numpy()))
         x.append(float(am))
         y.append(float(fm))
-        u.append(float(- am.grad))
-        v.append(float(- fm.grad))
+        u.append(float(-am.grad))
+        v.append(float(-fm.grad))
 
-        grad = np.stack([float(- am.grad), float(-fm.grad)])
+        grad = np.stack([float(-am.grad), float(-fm.grad)])
         grads.append(grad)
 
     zs = np.array(losses)
     Z = zs.reshape(X.shape)
 
-    plot_contour_gradient(X, Y, Z, target_idx, grads, save_path=f"img/grad_field_{loss_type}_{time_shift}.png")
-    mesh_plot_3d(X, Y, Z, target_idx, save_path=f"img/3d_mesh_{loss_type}_{time_shift}.png")
-
+    plot_contour_gradient(
+        X,
+        Y,
+        Z,
+        target_idx,
+        grads,
+        save_path=f"img/grad_field_{loss_type}_{time_shift}.png",
+    )
+    mesh_plot_3d(
+        X, Y, Z, target_idx, save_path=f"img/3d_mesh_{loss_type}_{time_shift}.png"
+    )
 
 
 def main():
-  fire.Fire(run_gradient_viz)
+    fire.Fire(run_gradient_viz)
+
 
 if __name__ == "__main__":
     main()
