@@ -21,7 +21,11 @@ def gauss_window(M: float, std: torch.FloatTensor, sym: bool = True):
 
 
 def generate_am_chirp(
-    theta: torch.FloatTensor, bw: float = 2, duration: float = 4, sr: float = 2**13, delta=0
+    theta: torch.FloatTensor,
+    bw: float = 2,
+    duration: float = 4,
+    sr: float = 2**13,
+    delta=0,
 ):
     f_c, f_m, gamma = theta[0], theta[1], theta[2]
     t = torch.arange(-duration / 2, duration / 2, 1 / sr).type_as(f_m)
@@ -42,26 +46,24 @@ def sine(phi):
 
 def time_shift(x, delta):
     y = torch.zeros_like(x)
-    y[delta:] = x[:- delta]
+    y[delta:] = x[:-delta]
     return y
 
 
 def chirp(t, gamma=0.5, f_c=512):
-    chirp_phase = 2*np.pi*f_c / (gamma*np.log(2)) * (2 ** (gamma*t) - 1)
+    chirp_phase = 2 * np.pi * f_c / (gamma * np.log(2)) * (2 ** (gamma * t) - 1)
     return np.sin(chirp_phase)
 
 
 def am_sine(f_c, f_m, duration=2, sr=2**14):
-    t = np.arange(-duration/2, duration/2, 1/sr)
-    carrier = np.sin(2*np.pi*f_c * t)
+    t = np.arange(-duration / 2, duration / 2, 1 / sr)
+    carrier = np.sin(2 * np.pi * f_c * t)
     modulator = np.sin(2 * np.pi * f_m * t)
     x = carrier * modulator
     return x
 
 
-def grid2d(
-    x1: float, x2: float, y1: float, y2: float, n: float
-):
+def grid2d(x1: float, x2: float, y1: float, y2: float, n: float):
     a = torch.logspace(np.log10(x1), np.log10(x2), n)
     b = torch.logspace(np.log10(y1), np.log10(y2), n)
     X = a.repeat(n)
@@ -72,7 +74,6 @@ def grid2d(
 def jtfs_loss(S, x, y):
     loss = torch.norm(S(x) - S(y), p=2)
     return loss
-
 
 def ripple(theta, duration, n_partials, sr):
     """Synthesizes a ripple sound.
