@@ -72,3 +72,46 @@ def grid2d(
 def jtfs_loss(S, x, y):
     loss = torch.norm(S(x) - S(y), p=2)
     return loss
+
+
+def ripple(theta, duration, n_partials, sr):
+    """Synthesizes a ripple sound.
+    Args:
+        theta: [omega, w, delta, f0, fm1]
+            omega (float): amount of phase shift at each partial. (Ripple density)
+            w (float): Amplitude modulation frequency in Hz. (Ripple drift)
+            delta (float): Normalized ripple depth. Value must be in
+                the range [0, 1].
+            f0 (float): Frequency of the lowest sinusoid in Hz.
+            fm1 (float): Frequency of the highest sinusoid in Hz.
+        duration (float): Duration of sound in seconds.
+        n_partials (int): Number of sinusoids.
+        sr (int): Sampling rate in Hz.
+        
+    Returns:
+        y (torch.tensor): The waveform.
+    """
+    omega, w, delta, f0, fm1 = theta
+    phi = 0.0
+    # create sinusoids
+    m = int(duration * sr)  # total number of samples
+    shapea = (1, m)
+    shapeb = (n_partials, 1)
+    t = torch.linspace(0, duration, int(m)).reshape(shapea)
+    i = torch.arange(n_partials).reshape(shapeb)
+    # space f0 and highest partial evenly in log domain (divided by # partials)
+    f = f0 * (fm1 / f0) ** (i / (n_partials - 1)) 
+    sphi = 2 * torch.pi * torch.rand(shapeb)
+    s = torch.sin(2 * torch.pi * f * t + sphi)
+
+    # create envelope
+    x = torch.log2(f / f0)
+    wprime = w * t
+    a = 1 + delta * torch.sin(2 * torch.pi * (wprime + omega * x) + phi)
+
+    win = torch.hann_window(t.shape[0])
+    # create the waveform
+    y = torch.sum(a * s / torch.sqrt(f), dim=0) * win
+    y = y / torch.max(torch.abs(y))
+
+    return y
