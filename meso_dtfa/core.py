@@ -75,7 +75,8 @@ def jtfs_loss(S, x, y):
     loss = torch.norm(S(x) - S(y), p=2)
     return loss
 
-def ripple(theta, duration, n_partials, sr):
+
+def ripple(theta, duration, n_partials, sr, window=False):
     """Synthesizes a ripple sound.
     Args:
         theta: [omega, w, delta, f0, fm1]
@@ -93,26 +94,24 @@ def ripple(theta, duration, n_partials, sr):
         y (torch.tensor): The waveform.
     """
     omega, w, delta, f0, fm1 = theta
+    assert len(omega.shape) == 2 and omega.shape[1] == 1
     phi = 0.0
     # create sinusoids
     m = int(duration * sr)  # total number of samples
-    shapea = (1, m)
-    shapeb = (n_partials, 1)
-    t = torch.linspace(0, duration, int(m)).reshape(shapea)
-    i = torch.arange(n_partials).reshape(shapeb)
+    t = torch.linspace(0, duration, int(m))[None, None, :]
+    i = torch.arange(n_partials)[None, :]
     # space f0 and highest partial evenly in log domain (divided by # partials)
-    f = f0 * (fm1 / f0) ** (i / (n_partials - 1)) 
-    sphi = 2 * torch.pi * torch.rand(shapeb)
+    f = (f0 * (fm1 / f0) ** (i / (n_partials - 1)))[:, :, None]
+    sphi = 2 * torch.pi * torch.rand((1, n_partials, 1))
     s = torch.sin(2 * torch.pi * f * t + sphi)
 
     # create envelope
-    x = torch.log2(f / f0)
-    wprime = w * t
-    a = 1 + delta * torch.sin(2 * torch.pi * (wprime + omega * x) + phi)
-
-    win = torch.hann_window(t.shape[0])
-    # create the waveform
-    y = torch.sum(a * s / torch.sqrt(f), dim=0) * win
+    x = torch.log2(f / f0[:, :, None])
+    wprime = w[:, :, None] * t
+    a = 1 + delta[:, :, None] * torch.sin(2 * torch.pi * (wprime + omega[:, :, None] * x) + phi)
+    win = torch.hann_window(duration * sr) if window else 1.0
+    # create the waveform, summing partials
+    y = torch.sum(a * s / torch.sqrt(f), dim=1) * win
     y = y / torch.max(torch.abs(y))
 
     return y
