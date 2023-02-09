@@ -11,27 +11,27 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
 
     target_idx = N * (N // 2) + (N // 2)
     
-    AM, FM = grid2d(x1=0.5, x2=4, y1=0.8, y2=1.5, n=N)
-    # AM = - AM
+    AM, FM = grid2d(x1=4, x2=16, y1=2, y2=4, n=N)
     X = AM.numpy().reshape((N, N))
     Y = FM.numpy().reshape((N, N))
     AM.requires_grad = True
     FM.requires_grad = True
     thetas = torch.stack([AM, FM], dim=-1)
 
-    sr = 2**14
-    duration = 2
+    sr = 2**13
+    duration = 4
     n_input = sr * duration
+    n_partials = 128
 
-    delta = torch.tensor([1.0])[None, :]
     f0 = torch.tensor([250], dtype=torch.float32, requires_grad=False)[None, :]
     fm1 = torch.tensor([sr // 2], dtype=torch.float32, requires_grad=False)[None, :]
     theta_target = thetas[target_idx].detach().requires_grad_(False)
 
     target = ripple(theta=[torch.tensor([theta_target[0]])[None, :], 
-                           torch.tensor([theta_target[1]])[None, :], delta, f0, fm1], 
+                           torch.tensor([theta_target[1]])[None, :],
+                           f0, fm1], 
                     duration=duration,
-                    n_partials=32,
+                    n_partials=n_partials,
                     sr=sr,
                     window=True).cuda().detach()
 
@@ -49,9 +49,9 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     for theta in tqdm(thetas):
         am = torch.tensor([[theta[0]]], requires_grad=True, dtype=torch.float32)
         fm = torch.tensor([[theta[1]]], requires_grad=True, dtype=torch.float32)
-        audio = ripple(theta=[am, fm, delta, f0, fm1], 
+        audio = ripple(theta=[am, fm, f0, fm1], 
                        duration=duration,
-                       n_partials=32,
+                       n_partials=n_partials,
                        sr=sr, 
                        window=True)
 
@@ -73,11 +73,11 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
                           target_idx, 
                           grads, 
                           save_path=f"img/grad_field_ripple_{loss_type}_{time_shift}.png", 
-                          ylabel="FM (cycles / octave)")
+                          ylabel="FM (octaves / second)")
     mesh_plot_3d(-X, Y, Z, 
                  target_idx, 
                  save_path=f"img/3d_mesh_ripple_{loss_type}_{time_shift}.png",
-                 ylabel="FM (cycles / octave)")
+                 ylabel="FM (octaves / second)")
 
 
 

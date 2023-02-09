@@ -93,8 +93,8 @@ def ripple(theta, duration, n_partials, sr, window=False):
     Returns:
         y (torch.tensor): The waveform.
     """
-    omega, w, delta, f0, fm1 = theta
-    assert len(omega.shape) == 2 and omega.shape[1] == 1
+    v, w, f0, fm1 = theta
+    assert len(v.shape) == 2 and v.shape[1] == 1
     phi = 0.0
     # create sinusoids
     m = int(duration * sr)  # total number of samples
@@ -107,8 +107,8 @@ def ripple(theta, duration, n_partials, sr, window=False):
 
     # create envelope
     x = torch.log2(f / f0[:, :, None])
-    wprime = w[:, :, None] * t
-    a = 1 + delta[:, :, None] * torch.sin(2 * torch.pi * (wprime + omega[:, :, None] * x) + phi)
+    delta = 1.0
+    a = 1.0 + delta * torch.sin(2 * torch.pi * w[:, :, None]*(t +  x / (v[:, :, None])) + phi)
     win = torch.hann_window(duration * sr) if window else 1.0
     # create the waveform, summing partials
     y = torch.sum(a * s / torch.sqrt(f), dim=1) * win
