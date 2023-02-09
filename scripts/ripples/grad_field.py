@@ -2,7 +2,7 @@ import numpy as np, torch, random, fire
 from tqdm import tqdm
 
 from meso_dtfa.core import ripple, grid2d
-from meso_dtfa.loss import TimeFrequencyScatteringLoss, MultiScaleSpectralLoss
+from meso_dtfa.loss import TimeFrequencyScatteringLoss, MultiScaleSpectralLoss, TimeFrequencyScatteringS2Loss
 from meso_dtfa.plot import plot_contour_gradient, mesh_plot_3d
 
 
@@ -11,8 +11,8 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
 
     target_idx = N * (N // 2) + (N // 2)
     
-    AM, FM = grid2d(x1=4.0, x2=32.0, y1=0.1, y2=1.0, n=N)
-    AM = - AM
+    AM, FM = grid2d(x1=0.5, x2=4, y1=0.8, y2=1.5, n=N)
+    # AM = - AM
     X = AM.numpy().reshape((N, N))
     Y = FM.numpy().reshape((N, N))
     AM.requires_grad = True
@@ -31,7 +31,7 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     target = ripple(theta=[torch.tensor([theta_target[0]])[None, :], 
                            torch.tensor([theta_target[1]])[None, :], delta, f0, fm1], 
                     duration=duration,
-                    n_partials=64,
+                    n_partials=32,
                     sr=sr,
                     window=True).cuda().detach()
 
@@ -39,6 +39,7 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
         loss_fn = TimeFrequencyScatteringLoss(
             shape=(n_input,), Q=(8, 2), J=12, J_fr=5, Q_fr=2, format="time", T=2**14
         )
+        # idxs = np.where(loss_fn.ops[0].meta()['order'] == 2)
         Sx_target = loss_fn.ops[0](target.cuda()).detach()
     elif loss_type == "mss":
         loss_fn = MultiScaleSpectralLoss(max_n_fft=1024)
@@ -71,10 +72,12 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     plot_contour_gradient(X, Y, Z, 
                           target_idx, 
                           grads, 
-                          save_path=f"img/grad_field_ripple_{loss_type}_{time_shift}.png")
-    mesh_plot_3d(X, Y, Z, 
+                          save_path=f"img/grad_field_ripple_{loss_type}_{time_shift}.png", 
+                          ylabel="FM (cycles / octave)")
+    mesh_plot_3d(-X, Y, Z, 
                  target_idx, 
-                 save_path=f"img/3d_mesh_ripple_{loss_type}_{time_shift}.png")
+                 save_path=f"img/3d_mesh_ripple_{loss_type}_{time_shift}.png",
+                 ylabel="FM (cycles / octave)")
 
 
 

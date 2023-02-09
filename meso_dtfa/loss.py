@@ -1,4 +1,4 @@
-import torch, torch.nn as nn
+import torch, torch.nn as nn, numpy as np
 from kymatio.torch import TimeFrequencyScattering
 
 
@@ -107,3 +107,50 @@ class MagnitudeSTFT(nn.Module):
             window=torch.hann_window(self.n_fft).type_as(x),
             return_complex=True,
         ).abs()
+
+
+class TimeFrequencyScatteringS2Loss(DistanceLoss):
+    def __init__(
+        self,
+        shape,
+        Q=(8, 2),
+        J=12,
+        J_fr=3,
+        Q_fr=2,
+        F=None,
+        T=None,
+        format="time",
+        p=2.0,
+    ):
+        super().__init__(p=p)
+
+        self.shape = shape
+        self.Q = Q
+        self.J = J
+        self.J_fr = J_fr
+        self.F = F
+        self.Q_fr = Q_fr
+        self.T = T
+        self.format = format
+        self.create_ops()
+
+    def create_ops(self):
+        S = TimeFrequencyScattering(
+            shape=self.shape,
+            Q=self.Q,
+            J=self.J,
+            J_fr=self.J_fr,
+            Q_fr=self.Q_fr,
+            T=self.T,
+            F=self.F,
+            format=self.format,
+        ).cuda()
+        self.ops = [S]
+        self.idxs = np.where(S.meta()['order'] == 2)
+
+    def forward(self, x, y, transform_y=True):
+        loss = torch.tensor(0.0).type_as(x)
+        for op in self.ops:
+            loss += self.dist(op(x)[0, self.idxs], op(y)[0, self.idxs] if transform_y else y)
+        loss /= len(self.ops)
+        return loss

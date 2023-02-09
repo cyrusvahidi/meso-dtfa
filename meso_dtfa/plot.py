@@ -36,7 +36,7 @@ def plot_gradient_field(x, y, u, v, x_range, y_range, target, save_path):
     plt.savefig(save_path, dpi=300)
 
 
-def plot_contour_gradient(X, Y, Z, target_idx, grads, save_path):
+def plot_contour_gradient(X, Y, Z, target_idx, grads, save_path, ylabel="FM (oct / s)"):
     """
     X, Y, Z: meshgrid (N, N) matrices
     target_idx: index of the target to scatter in green
@@ -58,8 +58,8 @@ def plot_contour_gradient(X, Y, Z, target_idx, grads, save_path):
 
     # Plot Labelling
     plt.xlabel("AM (Hz)")
-    # ax.loglog()
-    plt.ylabel("FM (oct / s)")
+    ax.loglog()
+    plt.ylabel(ylabel)
     plt.rcParams["axes.formatter.min_exponent"] = 2
     plt.show()
 
@@ -67,7 +67,7 @@ def plot_contour_gradient(X, Y, Z, target_idx, grads, save_path):
     plt.savefig(save_path, dpi=300)
 
 
-def mesh_plot_3d(X, Y, Z, target_idx, save_path):
+def mesh_plot_3d(X, Y, Z, target_idx, save_path, ylabel="FM (oct / s)"):
     fig = plt.figure()
     ax = plt.axes(projection="3d")
 
@@ -78,7 +78,7 @@ def mesh_plot_3d(X, Y, Z, target_idx, save_path):
     ax.scatter(target[0], target[1], color="g", alpha=1)
 
     ax.set_xlabel("AM (Hz)")
-    ax.set_ylabel("FM (oct / s)")
+    ax.set_ylabel(ylabel)
 
     plt.show()
     plt.savefig(save_path)

@@ -102,7 +102,7 @@ def ripple(theta, duration, n_partials, sr, window=False):
     i = torch.arange(n_partials)[None, :]
     # space f0 and highest partial evenly in log domain (divided by # partials)
     f = (f0 * (fm1 / f0) ** (i / (n_partials - 1)))[:, :, None]
-    sphi = 2 * torch.pi * torch.rand((1, n_partials, 1))
+    sphi = 0.0 # 2 * torch.pi * torch.rand((1, n_partials, 1))
     s = torch.sin(2 * torch.pi * f * t + sphi)
 
     # create envelope
