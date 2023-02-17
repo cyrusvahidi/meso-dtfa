@@ -94,12 +94,14 @@ def plot_spec(y, hop_length=256, n_fft=4096, sr=2**13):
 
 
 def plot_cqt(y, hop_length=32, bins_per_octave=24, sr=2**13, ax=None):
-    cqt_kwargs = {"sr": sr, 
-                  "fmin": 2**6, 
-                  "bins_per_octave": bins_per_octave, 
-                  "hop_length": hop_length}
+    cqt_kwargs = {
+        "sr": sr,
+        "fmin": 2**6,
+        "bins_per_octave": bins_per_octave,
+        "hop_length": hop_length,
+    }
     CQT = librosa.cqt(y, n_bins=120, **cqt_kwargs)
-    librosa.display.specshow((np.abs(CQT)**0.33), **cqt_kwargs, ax=ax)
+    librosa.display.specshow((np.abs(CQT) ** 0.33), **cqt_kwargs, ax=ax)
     # plt.ylim(0, 75)
 
 

@@ -89,7 +89,7 @@ def ripple(theta, duration, n_partials, sr, window=False):
         duration (float): Duration of sound in seconds.
         n_partials (int): Number of sinusoids.
         sr (int): Sampling rate in Hz.
-        
+
     Returns:
         y (torch.tensor): The waveform.
     """
@@ -102,13 +102,15 @@ def ripple(theta, duration, n_partials, sr, window=False):
     i = torch.arange(n_partials)[None, :]
     # space f0 and highest partial evenly in log domain (divided by # partials)
     f = (f0 * (fm1 / f0) ** (i / (n_partials - 1)))[:, :, None]
-    sphi = 0.0 # 2 * torch.pi * torch.rand((1, n_partials, 1))
+    sphi = 0.0  # 2 * torch.pi * torch.rand((1, n_partials, 1))
     s = torch.sin(2 * torch.pi * f * t + sphi)
 
     # create envelope
     x = torch.log2(f / f0[:, :, None])
     delta = 1.0
-    a = 1.0 + delta * torch.sin(2 * torch.pi * w[:, :, None]*(t +  x / (v[:, :, None])) + phi)
+    a = 1.0 + delta * torch.sin(
+        2 * torch.pi * w[:, :, None] * (t + x / (v[:, :, None])) + phi
+    )
     win = torch.hann_window(duration * sr) if window else 1.0
     # create the waveform, summing partials
     y = torch.sum(a * s / torch.sqrt(f), dim=1) * win

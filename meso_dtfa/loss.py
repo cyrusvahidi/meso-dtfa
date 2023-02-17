@@ -146,11 +146,13 @@ class TimeFrequencyScatteringS2Loss(DistanceLoss):
             format=self.format,
         ).cuda()
         self.ops = [S]
-        self.idxs = np.where(S.meta()['order'] == 2)
+        self.idxs = np.where(S.meta()["order"] == 2)
 
     def forward(self, x, y, transform_y=True):
         loss = torch.tensor(0.0).type_as(x)
         for op in self.ops:
-            loss += self.dist(op(x)[0, self.idxs], op(y)[0, self.idxs] if transform_y else y)
+            loss += self.dist(
+                op(x)[0, self.idxs], op(y)[0, self.idxs] if transform_y else y
+            )
         loss /= len(self.ops)
         return loss
