@@ -15,7 +15,7 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
 
     target_idx = N * (N // 2) + (N // 2)
 
-    AM, FM = grid2d(x1=4, x2=16, y1=2, y2=4, n=N)
+    AM, FM = grid2d(x1=2, x2=8, y1=0.5, y2=4, n=N)
     X = AM.numpy().reshape((N, N))
     Y = FM.numpy().reshape((N, N))
     AM.requires_grad = True
@@ -25,7 +25,7 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     sr = 2**13
     duration = 4
     n_input = sr * duration
-    n_partials = 128
+    n_partials = 16
 
     f0 = torch.tensor([250], dtype=torch.float32, requires_grad=False)[None, :]
     fm1 = torch.tensor([sr // 2], dtype=torch.float32, requires_grad=False)[None, :]
@@ -34,8 +34,8 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     target = (
         ripple(
             theta=[
-                torch.tensor([theta_target[0]])[None, :],
                 torch.tensor([theta_target[1]])[None, :],
+                torch.tensor([theta_target[0]])[None, :],
                 f0,
                 fm1,
             ],
@@ -63,7 +63,7 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
         am = torch.tensor([[theta[0]]], requires_grad=True, dtype=torch.float32)
         fm = torch.tensor([[theta[1]]], requires_grad=True, dtype=torch.float32)
         audio = ripple(
-            theta=[am, fm, f0, fm1],
+            theta=[fm, am, f0, fm1],
             duration=duration,
             n_partials=n_partials,
             sr=sr,
