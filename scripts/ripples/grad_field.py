@@ -9,13 +9,14 @@ from meso_dtfa.loss import (
 )
 from meso_dtfa.plot import plot_contour_gradient, mesh_plot_3d
 
+torch.set_float32_matmul_precision("high")
 
 def run_gradient_viz(loss_type="jtfs", time_shift=None):
     N = 20
 
     target_idx = N * (N // 2) + (N // 2)
 
-    AM, FM = grid2d(x1=2, x2=8, y1=0.5, y2=4, n=N)
+    AM, FM = grid2d(x1=0.5, x2=3, y1=1, y2=4, n=N)
     X = AM.numpy().reshape((N, N))
     Y = FM.numpy().reshape((N, N))
     AM.requires_grad = True
@@ -25,9 +26,9 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     sr = 2**13
     duration = 4
     n_input = sr * duration
-    n_partials = 16
+    n_partials = 100
 
-    f0 = torch.tensor([250], dtype=torch.float32, requires_grad=False)[None, :]
+    f0 = torch.tensor([16], dtype=torch.float32, requires_grad=False)[None, :]
     fm1 = torch.tensor([sr // 2], dtype=torch.float32, requires_grad=False)[None, :]
     theta_target = thetas[target_idx].detach().requires_grad_(False)
 
