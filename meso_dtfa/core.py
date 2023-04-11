@@ -76,7 +76,7 @@ def jtfs_loss(S, x, y):
     return loss
 
 
-def ripple(theta, duration, n_partials, sr, window=False):
+def _ripple(theta, duration, n_partials, sr, window=False):
     """Synthesizes a ripple sound.
     Args:
         theta: [v, w, f0, fm1]
@@ -112,6 +112,54 @@ def ripple(theta, duration, n_partials, sr, window=False):
     delta = 1.0
     a = 1.0 + delta * torch.sin(
         2 * torch.pi * w[:, :, None] * (t + x / (v[:, :, None])) + phi
+    )
+    win = torch.hann_window(duration * sr) if window else 1.0
+    # create the waveform, summing partials
+    y = torch.sum(a * s / torch.sqrt(f), dim=1) * win
+    y = y / torch.max(torch.abs(y))
+
+    return y
+
+
+def ripple(theta, duration, n_partials, sr, window=False):
+    """Synthesizes a ripple sound.
+    Args:
+        theta: [v, w, f0, fm1]
+            v (float): octaves per second, w / omega
+            omega (float): amount of phase shift at each partial. (Ripple density)
+            w (float): Amplitude modulation frequency in Hz. (Ripple drift)
+            delta (float): Normalized ripple depth. Value must be in
+                the range [0, 1].
+            f0 (float): Frequency of the lowest sinusoid in Hz.
+            fm1 (float): Frequency of the highest sinusoid in Hz.
+        duration (float): Duration of sound in seconds.
+        n_partials (int): Number of sinusoids.
+        sr (int): Sampling rate in Hz.
+
+    Returns:
+        y (torch.tensor): The waveform.
+    """
+    v, w, f0, fm1 = theta
+    device = v.device
+    assert len(v.shape) == 2 and v.shape[1] == 1
+    phi = 0.0
+    # create sinusoids
+    m = int(duration * sr)  # total number of samples
+    t = torch.linspace(0, duration, int(m)).to(device)[None, None, :]
+    i = torch.arange(n_partials).to(device)[None, :]
+    # space f0 and highest partial evenly in log domain (divided by # partials)
+    f = (f0 * (fm1 / f0) ** (i / (n_partials - 1)))[:, :, None]
+    sphi = 2 * torch.pi * torch.rand((1, n_partials, 1))
+    s = torch.sin(2 * torch.pi * f * t + sphi)
+
+    # create envelope
+    x = torch.log2(f / f0[:, :, None])
+    delta = 1.0
+    # a = 1.0 + delta * torch.sin(
+    #     2 * torch.pi * w[:, :, None] * (t + x / (v[:, :, None])) + phi
+    # )
+    a = 1.0 + delta * torch.sin(
+        2 * torch.pi * (w[:, :, None] * t + x * v[:, :, None]) + phi
     )
     win = torch.hann_window(duration * sr) if window else 1.0
     # create the waveform, summing partials

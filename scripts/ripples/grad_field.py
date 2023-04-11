@@ -1,4 +1,4 @@
-import numpy as np, torch, random, fire
+import numpy as np, torch, fire
 from tqdm import tqdm
 
 from meso_dtfa.core import ripple, grid2d
@@ -6,6 +6,7 @@ from meso_dtfa.loss import (
     TimeFrequencyScatteringLoss,
     MultiScaleSpectralLoss,
     TimeFrequencyScatteringS2Loss,
+    WeightedTimeFrequencyScatteringLoss
 )
 from meso_dtfa.plot import plot_contour_gradient, mesh_plot_3d
 
@@ -16,7 +17,7 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
 
     target_idx = N * (N // 2) + (N // 2)
 
-    AM, FM = grid2d(x1=0.5, x2=3, y1=1, y2=4, n=N)
+    AM, FM = grid2d(x1=1, x2=6, y1=0.2, y2=1.5, n=N)
     X = AM.numpy().reshape((N, N))
     Y = FM.numpy().reshape((N, N))
     AM.requires_grad = True
@@ -26,9 +27,9 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     sr = 2**13
     duration = 4
     n_input = sr * duration
-    n_partials = 100
+    n_partials = 16
 
-    f0 = torch.tensor([16], dtype=torch.float32, requires_grad=False)[None, :]
+    f0 = torch.tensor([250], dtype=torch.float32, requires_grad=False)[None, :]
     fm1 = torch.tensor([sr // 2], dtype=torch.float32, requires_grad=False)[None, :]
     theta_target = thetas[target_idx].detach().requires_grad_(False)
 
@@ -50,11 +51,10 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     )
 
     if loss_type == "jtfs":
-        loss_fn = TimeFrequencyScatteringLoss(
-            shape=(n_input,), Q=(8, 2), J=12, J_fr=5, Q_fr=2, format="time", T=2**14
+        loss_fn = WeightedTimeFrequencyScatteringLoss(
+            shape=(n_input,), Q=(8, 2), J=12, J_fr=5, Q_fr=2, format="time", weights=[0.25, 1.0]
         )
-        # idxs = np.where(loss_fn.ops[0].meta()['order'] == 2)
-        Sx_target = loss_fn.ops[0](target.cuda()).detach()
+        Sx_target = loss_fn.ops[0](target.cuda()).detach()[0]
     elif loss_type == "mss":
         loss_fn = MultiScaleSpectralLoss(max_n_fft=1024)
 
