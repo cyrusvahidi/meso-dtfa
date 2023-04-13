@@ -6,24 +6,25 @@ from meso_dtfa.core import ripple, grid2d
 from meso_dtfa.loss import (
     MultiScaleSpectralLoss,
     TimeFrequencyScatteringLoss,
+    WeightedTimeFrequencyScatteringLoss,
     DistanceLoss,
 )
 
 
 def run_gradient_descent(loss_type="jtfs"):
 
-    f0 = torch.tensor([256], dtype=torch.float32, requires_grad=False).cuda().reshape(1,1)
-    fm1 = torch.tensor([4096], dtype=torch.float32, requires_grad=False).cuda().reshape(1,1)
+    f0 = torch.tensor([256], dtype=torch.float32, requires_grad=False).reshape(1,1)
+    fm1 = torch.tensor([4096], dtype=torch.float32, requires_grad=False).reshape(1,1)
     N = 20
 
     target_idx = N * (N // 2) + (N // 2)
 
-    AM, FM = grid2d(x1=2, x2=14, y1=2, y2=4, n=N)
-    thetas = torch.stack([AM, FM], dim=-1).cuda()  # (400, 2)
+    AM, FM = grid2d(x1=1, x2=6, y1=0.2, y2=1.5, n=N)
+    thetas = torch.stack([AM, FM], dim=-1)  # (400, 2)
 
     sr = 2**13
     duration = 2
-    npartials = 128
+    npartials = 16
     n_input = sr * duration
 
     jtfs_kwargs = {
@@ -35,10 +36,11 @@ def run_gradient_descent(loss_type="jtfs"):
         "Q_fr": 2,
         "format": "time",
     }
-    jtfs = TimeFrequencyScattering(**jtfs_kwargs).cuda()
 
     if loss_type == "jtfs":
-        specloss = TimeFrequencyScatteringLoss(**jtfs_kwargs)
+        specloss = WeightedTimeFrequencyScatteringLoss(
+            shape=(n_input,), Q=(8, 2), J=12, J_fr=5, Q_fr=2, format="time", weights=[0.25, 1.0]
+        )
         lr = 100
     elif loss_type == "mss":
         specloss = MultiScaleSpectralLoss()
@@ -46,11 +48,11 @@ def run_gradient_descent(loss_type="jtfs"):
 
     Ploss = DistanceLoss()
 
-    theta_target = thetas[target_idx].clone().detach().requires_grad_(False).cuda()
+    theta_target = thetas[target_idx].clone().detach().requires_grad_(False)
     # define time shift
     target = (
         ripple(
-            [theta_target[1].reshape(1,1).cuda(), theta_target[0].reshape(1,1).cuda(), f0, fm1],
+            [theta_target[1].reshape(1,1), theta_target[0].reshape(1,1), f0, fm1],
             sr=sr,
             duration=duration,
             n_partials=npartials, 
@@ -58,7 +60,8 @@ def run_gradient_descent(loss_type="jtfs"):
         .cuda()
         .detach()
     )
-    Sx_target = jtfs(target.cuda()).detach()
+    Sx_target = specloss.ops[0](target.cuda()).detach()[0]
+
 
     slosses, plosses, grads = [], [], []
     best_ploss = np.inf
@@ -70,8 +73,8 @@ def run_gradient_descent(loss_type="jtfs"):
         best_ploss = np.inf
         theta_prediction = thetas[pred,:].clone().detach().requires_grad_(False)
         print("caculating {}".format(pred))
-        am = torch.tensor([theta_prediction[0]], requires_grad=True, dtype=torch.float32).reshape(1,1).cuda()
-        fm = torch.tensor([theta_prediction[1]], requires_grad=True, dtype=torch.float32).reshape(1,1).cuda()
+        am = torch.tensor([theta_prediction[0]], requires_grad=True, dtype=torch.float32).reshape(1,1)
+        fm = torch.tensor([theta_prediction[1]], requires_grad=True, dtype=torch.float32).reshape(1,1)
         print("initial prediction", am, fm)
 
         for iter in range(iters):
@@ -79,12 +82,12 @@ def run_gradient_descent(loss_type="jtfs"):
             fm.retain_grad()
             audio = ripple([fm, am, f0, fm1], sr=sr, duration=duration, n_partials=npartials)
             if loss_type == "jtfs":
-                sloss = specloss(audio, Sx_target, transform_y=False)
+                sloss = specloss(audio.cuda(), Sx_target, transform_y=False)
             elif loss_type == "mss":
                 sloss = specloss(audio, target, transform_y=True)
             sloss.backward()
             slosses.append(float(sloss.detach().cpu().numpy()))
-            ploss = Ploss.dist(torch.tensor([am, fm]).cuda(), theta_target.cuda())
+            ploss = Ploss.dist(torch.tensor([am, fm]), theta_target)
             plosses.append(float(ploss.cpu().numpy()))
             #print("check grad", am.grad, fm.grad, fm1.grad, f0.grad)
             grad = np.stack([float(-am.grad), float(-fm.grad)])
