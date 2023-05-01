@@ -7,7 +7,7 @@ from meso_dtfa.plot import plot_contour_gradient, mesh_plot_3d
 
 
 def run_gradient_viz(loss_type="jtfs", time_shift=None):
-    f0 = torch.tensor([512], dtype=torch.float32, requires_grad=False).cuda()
+    f0 = torch.tensor([512.0], dtype=torch.float32, requires_grad=False).cuda()
     N = 20
 
     target_idx = N * (N // 2) + (N // 2)
@@ -35,11 +35,11 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     if loss_type == "jtfs":
         loss_fn = TimeFrequencyScatteringLoss(
             shape=(n_input,),
-            T=2**13,
+            #T=2**13,
             Q=(8, 2),
             J=12,
             J_fr=5,
-            F=0,
+            F="global",
             Q_fr=2,
             format="time",
         )
@@ -53,7 +53,7 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
         am = torch.tensor(theta[0], requires_grad=True, dtype=torch.float32)
         fm = torch.tensor(theta[1], requires_grad=True, dtype=torch.float32)
         audio = generate_am_chirp(
-            [f0, am, fm],
+            [torch.tensor([768.0], dtype=torch.float32, requires_grad=False).cuda(), am, fm],
             sr=sr,
             duration=duration,
             delta=(2 ** random.randint(8, 12) if time_shift == "random" else 2**8)

@@ -2,6 +2,15 @@ import torch, torch.nn as nn, numpy as np
 from kymatio.torch import TimeFrequencyScattering
 
 
+def cosine_distance(x, y):
+    """Compute the cosine distance between two 2D tensors.""" 
+    sim = torch.nn.functional.cosine_similarity(x, y, dim=0)
+    dist = 1 - sim
+    dist /= 2 # Normalize to range [0,1]
+    dist = dist.mean()
+    return dist
+
+
 class DistanceLoss(nn.Module):
     def __init__(self, p=2):
         super().__init__()
@@ -15,6 +24,8 @@ class DistanceLoss(nn.Module):
             return torch.abs(x - y).mean()
         elif self.p == 2.0:
             return torch.norm(x - y, p=self.p)
+        elif self.p == "cosine":
+            return cosine_distance(x, y)
 
     def forward(self, x, y, transform_y=True):
         loss = torch.tensor(0.0).type_as(x)

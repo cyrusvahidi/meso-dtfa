@@ -38,23 +38,22 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     )
 
     if loss_type == "jtfs":
-        """
         loss_fn = TimeFrequencyScatteringLoss(
             shape=(n_input,),
-            T=2**13,
+            # T=2**13,
             Q=(8, 2),
             J=12,
             J_fr=5,
-            F=0,
+            # F=0,
             Q_fr=2,
             format="time",
+            p="cosine"
         )
         Sx_target = loss_fn.ops[0](target.cuda()).detach()
-        """
-        loss_fn = WeightedTimeFrequencyScatteringLoss(
-            shape=(n_input,), Q=(8, 2), J=12, J_fr=5, Q_fr=2, format="time", weights=[0.25, 1.0]
-        )
-        Sx_target = loss_fn.ops[0](target.cuda()).detach()[0]
+        # loss_fn = WeightedTimeFrequencyScatteringLoss(
+        #     shape=(n_input,), Q=(8, 2), J=12, J_fr=5, Q_fr=2, format="time", weights=[0.25, 1.0]
+        # )
+        # Sx_target = loss_fn.ops[0](target.cuda()).detach()[0]
 
     elif loss_type == "mss":
         loss_fn = MultiScaleSpectralLoss(max_n_fft=1024)
@@ -69,7 +68,7 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
         audio = ripple([fm, am, f0, fm1], sr=sr, duration=duration, n_partials=npartials)
 
         loss = (
-            loss_fn(audio.cuda(), Sx_target.cuda(), transform_y=False)
+            loss_fn(audio.cuda()[0], Sx_target.cuda()[0], transform_y=False)
             if loss_type == "jtfs"
             else loss_fn(audio, target)
         )

@@ -19,7 +19,7 @@ def run_gradient_descent(loss_type="jtfs"):
 
     target_idx = N * (N // 2) + (N // 2)
 
-    AM, FM = grid2d(x1=1, x2=6, y1=0.2, y2=1.5, n=N)
+    AM, FM = grid2d(x1=1, x2=32, y1=0.2, y2=1, n=N)
     thetas = torch.stack([AM, FM], dim=-1)  # (400, 2)
 
     sr = 2**13
