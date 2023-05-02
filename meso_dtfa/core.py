@@ -139,31 +139,30 @@ def ripple(theta, duration, n_partials, sr, window=False):
     Returns:
         y (torch.tensor): The waveform.
     """
-    v, w, f0, fm1 = theta
-    device = v.device
-    assert len(v.shape) == 2 and v.shape[1] == 1
+    omega, w, f0, fm1 = theta
+    device = omega.device
     phi = 0.0
     # create sinusoids
     m = int(duration * sr)  # total number of samples
-    t = torch.linspace(0, duration, int(m)).to(device)[None, None, :]
-    i = torch.arange(n_partials).to(device)[None, :]
+    t = torch.linspace(0, duration, int(m)).to(device).reshape((1, -1))
+    i = torch.arange(n_partials).to(device).reshape((n_partials, 1))
     # space f0 and highest partial evenly in log domain (divided by # partials)
-    f = (f0 * (fm1 / f0) ** (i / (n_partials - 1)))[:, :, None]
+    f = (f0 * (fm1 / f0) ** (i / (n_partials - 1)))
     sphi = 0#2 * torch.pi * torch.rand((1, n_partials, 1)).to(device)
     s = torch.sin(2 * torch.pi * f * t + sphi)
 
     # create envelope
-    x = torch.log2(f / f0[:, :, None])
+    x = torch.log2(f / f0)
     delta = 1.0
     # a = 1.0 + delta * torch.sin(
     #     2 * torch.pi * w[:, :, None] * (t + x / (v[:, :, None])) + phi
     # )
     a = 1.0 + delta * torch.sin(
-        2 * torch.pi * (w[:, :, None] * t + x * v[:, :, None]) + phi
+        2 * torch.pi * (w * t + x * omega) + phi
     )
     win = torch.hann_window(duration * sr) if window else 1.0
     # create the waveform, summing partials
-    y = torch.sum(a * s / torch.sqrt(f), dim=1) * win
-    y = y / torch.max(torch.abs(y))
+    y = torch.sum(a * s / torch.sqrt(f), dim=0) * win
+    y = y / torch.sum(torch.abs(y))
 
     return y

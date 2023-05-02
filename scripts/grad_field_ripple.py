@@ -7,28 +7,28 @@ from meso_dtfa.plot import plot_contour_gradient, mesh_plot_3d
 
 
 def run_gradient_viz(loss_type="jtfs", time_shift=None):
-    f0 = torch.tensor([256], dtype=torch.float32, requires_grad=False).cuda().reshape(1,1)
-    fm1 = torch.tensor([4096], dtype=torch.float32, requires_grad=False).cuda().reshape(1,1)
+    sr = 2**13
+    f0 = torch.tensor([32], dtype=torch.float32, requires_grad=False).cuda() # 256
+    fm1 = torch.tensor([sr // 2], dtype=torch.float32, requires_grad=False).cuda()
     N = 20
 
     target_idx = N * (N // 2) + (N // 2)
 
-    AM, FM = grid2d(x1=5, x2=25, y1=0.1, y2=1, n=N)
+    AM, FM = grid2d(x1=4, x2=16, y1=0.4, y2=1, n=N)
     X = AM.numpy().reshape((N, N))
     Y = FM.numpy().reshape((N, N))
     AM.requires_grad = True
     FM.requires_grad = True
     thetas = torch.stack([AM, FM], dim=-1).cuda()
 
-    sr = 2**13
     duration = 2
-    npartials = 128
+    npartials = 16
     n_input = sr * duration
 
     theta_target = thetas[target_idx].clone().detach().requires_grad_(False)
     target = (
         ripple(
-            [theta_target[1].reshape(1,1).cuda(), theta_target[0].reshape(1,1).cuda(), f0, fm1],
+            [theta_target[1].cuda(), theta_target[0].cuda(), f0, fm1],
             sr=sr,
             duration=duration,
             n_partials=npartials, 
@@ -44,16 +44,16 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
             Q=(8, 2),
             J=12,
             J_fr=5,
-            # F=0,
+            F=0,
             Q_fr=2,
             format="time",
-            p="cosine"
+            p=2
         )
         Sx_target = loss_fn.ops[0](target.cuda()).detach()
         # loss_fn = WeightedTimeFrequencyScatteringLoss(
-        #     shape=(n_input,), Q=(8, 2), J=12, J_fr=5, Q_fr=2, format="time", weights=[0.25, 1.0]
+        #     shape=(n_input,), Q=(8, 2), J=12, J_fr=5, Q_fr=2, format="time", weights=[0.25, 1.0], p="cosine"
         # )
-        # Sx_target = loss_fn.ops[0](target.cuda()).detach()[0]
+        # Sx_target = loss_fn.ops[0](target.cuda()).detach()
 
     elif loss_type == "mss":
         loss_fn = MultiScaleSpectralLoss(max_n_fft=1024)
@@ -61,14 +61,14 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     x, y, u, v = [], [], [], []
     losses, grads = [], []
     for theta in tqdm(thetas):
-        am = torch.tensor(theta[0], requires_grad=True, dtype=torch.float32).reshape(1,1).cuda()
-        fm = torch.tensor(theta[1], requires_grad=True, dtype=torch.float32).reshape(1,1).cuda()
+        am = torch.tensor(theta[0], requires_grad=True, dtype=torch.float32).cuda()
+        fm = torch.tensor(theta[1], requires_grad=True, dtype=torch.float32).cuda()
         am.retain_grad()
         fm.retain_grad()
         audio = ripple([fm, am, f0, fm1], sr=sr, duration=duration, n_partials=npartials)
 
         loss = (
-            loss_fn(audio.cuda()[0], Sx_target.cuda()[0], transform_y=False)
+            loss_fn(audio.cuda(), Sx_target.cuda(), transform_y=False)
             if loss_type == "jtfs"
             else loss_fn(audio, target)
         )

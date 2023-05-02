@@ -213,7 +213,7 @@ class WeightedTimeFrequencyScatteringLoss(DistanceLoss):
     def forward(self, x, y, transform_y=True):
         loss = torch.tensor(0.0).type_as(x)
         for op in self.ops:
-            Sx = op(x)[0]
+            Sx = op(x)
             Sy = op(y)[0] if transform_y else y
             for i, w in enumerate(self.weights):
                 loss += w * self.dist(
