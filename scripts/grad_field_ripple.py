@@ -7,9 +7,8 @@ from meso_dtfa.plot import plot_contour_gradient, mesh_plot_3d
 
 
 def run_gradient_viz(loss_type="jtfs", time_shift=None):
-    sr = 2**13
-    f0 = torch.tensor([32], dtype=torch.float32, requires_grad=False).cuda() # 256
-    fm1 = torch.tensor([sr // 2], dtype=torch.float32, requires_grad=False).cuda()
+    f0 = torch.tensor([256], dtype=torch.float32, requires_grad=False).cuda()
+    fm1 = torch.tensor([4096], dtype=torch.float32, requires_grad=False).cuda()
     N = 20
 
     target_idx = N * (N // 2) + (N // 2)
@@ -21,6 +20,7 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     FM.requires_grad = True
     thetas = torch.stack([AM, FM], dim=-1).cuda()
 
+    sr = 2**13
     duration = 2
     npartials = 16
     n_input = sr * duration
