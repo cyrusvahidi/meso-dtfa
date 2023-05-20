@@ -7,7 +7,7 @@ from meso_dtfa.plot import plot_contour_gradient, mesh_plot_3d
 
 
 def run_gradient_viz(loss_type="jtfs", time_shift=None):
-    f0 = torch.tensor([256], dtype=torch.float32, requires_grad=False).cuda()
+    f0 = torch.tensor([16], dtype=torch.float32, requires_grad=False).cuda()
     fm1 = torch.tensor([4096], dtype=torch.float32, requires_grad=False).cuda()
     N = 20
 
@@ -41,9 +41,10 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
         loss_fn = TimeFrequencyScatteringLoss(
             shape=(n_input,),
             # T=2**13,
-            Q=(8, 2),
+            Q=(12, 2),
             J=12,
             J_fr=5,
+            # T="global",
             F=0,
             Q_fr=2,
             format="time",
@@ -58,7 +59,7 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
     elif loss_type == "mss":
         loss_fn = MultiScaleSpectralLoss(max_n_fft=1024)
 
-    x, y, u, v = [], [], [], []
+    x, y = [], []
     losses, grads = [], []
     for theta in tqdm(thetas):
         am = torch.tensor(theta[0], requires_grad=True, dtype=torch.float32).cuda()
@@ -76,9 +77,6 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
         losses.append(float(loss.detach().cpu().numpy()))
         x.append(float(am))
         y.append(float(fm))
-        u.append(float(-am.grad))
-        v.append(float(-fm.grad))
-
         grad = np.stack([float(-am.grad), float(-fm.grad)])
         grads.append(grad)
 
@@ -92,6 +90,7 @@ def run_gradient_viz(loss_type="jtfs", time_shift=None):
         target_idx,
         grads,
         save_path=f"img/grad_field_{loss_type}_{time_shift}.png",
+        ylabel="FM (cycles / octave)"
     )
     mesh_plot_3d(
         X, Y, Z, target_idx, save_path=f"img/3d_mesh_{loss_type}_{time_shift}.png"

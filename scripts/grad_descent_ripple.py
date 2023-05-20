@@ -27,16 +27,6 @@ def run_gradient_descent(loss_type="jtfs"):
     npartials = 16
     n_input = sr * duration
 
-    jtfs_kwargs = {
-        "shape": (n_input,),
-        "Q": (8, 2),
-        "J": 12,
-        "J_fr": 5,
-        "F": 0,
-        "Q_fr": 2,
-        "format": "time",
-    }
-
     if loss_type == "jtfs":
         specloss = WeightedTimeFrequencyScatteringLoss(
             shape=(n_input,), Q=(8, 2), J=12, J_fr=5, Q_fr=2, format="time", weights=[0.25, 1.0]

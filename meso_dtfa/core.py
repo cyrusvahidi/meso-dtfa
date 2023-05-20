@@ -160,9 +160,9 @@ def ripple(theta, duration, n_partials, sr, window=False):
     a = 1.0 + delta * torch.sin(
         2 * torch.pi * (w * t + x * omega) + phi
     )
-    win = torch.hann_window(duration * sr) if window else 1.0
+    # win = torch.hann_window(duration * sr) if window else 1.0
     # create the waveform, summing partials
-    y = torch.sum(a * s / torch.sqrt(f), dim=0) * win
+    y = torch.sum(a * s, dim=0) # / torch.sqrt(f)
     y = y / torch.sum(torch.abs(y))
 
     return y

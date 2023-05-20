@@ -23,7 +23,7 @@ class DistanceLoss(nn.Module):
         if self.p == 1.0:
             return torch.abs(x - y).mean()
         elif self.p == 2.0:
-            return torch.norm(x - y, p=self.p)
+            return torch.norm(x - y, p=2.0)
         elif self.p == "cosine":
             return cosine_distance(x, y)
 
@@ -61,7 +61,7 @@ class TimeFrequencyScatteringLoss(DistanceLoss):
         self.create_ops()
 
     def create_ops(self):
-        S = TimeFrequencyScattering(
+        S = TimeFrequencyScattering1D(
             shape=self.shape,
             Q=self.Q,
             J=self.J,
@@ -72,7 +72,6 @@ class TimeFrequencyScatteringLoss(DistanceLoss):
             format=self.format,
         ).cuda()
         self.ops = [S]
-
 
 class MultiScaleSpectralLoss(DistanceLoss):
     def __init__(
