@@ -61,7 +61,7 @@ class TimeFrequencyScatteringLoss(DistanceLoss):
         self.create_ops()
 
     def create_ops(self):
-        S = TimeFrequencyScattering1D(
+        S = TimeFrequencyScattering(
             shape=self.shape,
             Q=self.Q,
             J=self.J,
@@ -74,6 +74,24 @@ class TimeFrequencyScatteringLoss(DistanceLoss):
         self.ops = [S]
 
 class MultiScaleSpectralLoss(DistanceLoss):
+    """
+    Multi-scale spectral loss module.
+
+    Args:
+        max_n_fft (int, optional): The maximum size of the FFT (Fast Fourier Transform). Defaults to 2048.
+        num_scales (int, optional): The number of scales to consider. Defaults to 6.
+        hop_lengths (list, optional): The hop lengths for each scale. If not provided, they are computed automatically. Defaults to None.
+        mag_w (float, optional): The weight for the magnitude component. Defaults to 1.0.
+        logmag_w (float, optional): The weight for the log-magnitude component. Defaults to 0.0.
+        p (float, optional): The exponent value for the distance metric. Defaults to 1.0.
+
+    Notes:
+        - The `max_n_fft` parameter should be divisible by 2 raised to the power of (`num_scales` - 1).
+        - If `hop_lengths` are not provided, they are automatically computed based on the `n_ffts` of each scale.
+
+    Example:
+        >>> loss = MultiScaleSpectralLoss(max_n_fft=4096, num_scales=4, mag_w=0.8, logmag_w=0.2, p=2.0)
+    """
     def __init__(
         self,
         max_n_fft=2048,
@@ -120,6 +138,23 @@ class MagnitudeSTFT(nn.Module):
 
 
 class TimeFrequencyScatteringS2Loss(DistanceLoss):
+    """
+     Time-Frequency Scattering transform loss
+
+    Args:
+        shape (tuple): The shape of the input signals in the form (num_samples, ).
+        Q (tuple, optional): The quality factors for the filters at each order. Defaults to (8, 2).
+        J (int, optional): The number of scales for the scattering transform. Defaults to 12.
+        J_fr (int, optional): The number of scales for the frequency scattering filterbank. Defaults to 3.
+        Q_fr (int, optional): The quality factor for the filters in the frequential filterbank. Defaults to 2.
+        F (int, optional): Frequency averaging scale. Defgault to 2**J_fr
+        T (int, optional): Temporal averaging scale. Defaults to 2**J
+        format (str, optional): output format with options ["time", "joint"]
+        p (float, optional): The exponent value for the distance metric. Defaults to 2.0.
+
+    Example:
+        >>> loss = TimeFrequencyScatteringS2Loss(shape=(batch_size, channels, height, width), Q=(6, 3), J=10, J_fr=2, Q_fr=3)
+    """
     def __init__(
         self,
         shape,
@@ -159,6 +194,17 @@ class TimeFrequencyScatteringS2Loss(DistanceLoss):
         self.idxs = np.where(S.meta()["order"] == 2)
 
     def forward(self, x, y, transform_y=True):
+        """
+        Compute the forward pass of the loss.
+
+        Args:
+            x (torch.Tensor): The input signal.
+            y (torch.Tensor): The target signal.
+            transform_y (bool, optional): Whether to apply the transform on the target signal. Defaults to True.
+
+        Returns:
+            torch.Tensor: The computed loss value.
+        """
         loss = torch.tensor(0.0).type_as(x)
         for op in self.ops:
             loss += self.dist(
