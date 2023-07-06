@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="meso_dtfa",
@@ -7,10 +7,9 @@ setup(
     author="Cyrus Vahidi",
     author_email="c.vahidi@qmul.ac.uk",
     include_package_data=True,
-    packages=['meso_dtfa'],
+    packages=find_packages(exclude=['scripts', 'tests.*']),
     url="https://github.com/cyrusvahidi/meso-dtfa",
-    install_requires=["gin-config",
-                      "librosa", 
+    install_requires=["librosa", 
                       "torch",
                       "tqdm",
                       "fire"]

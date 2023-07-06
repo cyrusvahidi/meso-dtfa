@@ -1,6 +1,5 @@
 LICENSE
 README.md
-pyproject.toml
 setup.py
 meso_dtfa/__init__.py
 meso_dtfa/core.py
