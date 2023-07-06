@@ -25,8 +25,28 @@ def generate_am_chirp(
     bw: float = 2,
     duration: float = 4,
     sr: float = 2**13,
-    delta=0,
+    delta: int = 0,
 ):
+    """
+    Generate an amplitude-modulated chirp signal. 
+    The signal is windowed in the time domain by a Gaussian function, whose width
+    is controlled by `bw` measured in octaves. All chirps cover a bandwidth `bw`.
+
+    Args:
+        theta (Union[torch.FloatTensor]): The carrier frequency (f_c) in Hz, modulator frequency (f_m) in Hz, 
+            and chirp rate (gamma) in octaves / second of the chirp signal.
+        bw (float, optional): The bandwidth of the chirp signal in octaves. Defaults to 2.
+        duration (float, optional): The duration of the chirp signal in seconds. Defaults to 4.
+        sr (float, optional): The sample rate of the chirp signal in samples per second. Defaults to 2**13.
+        delta (float, optional): applies a time shift in samples
+    Returns:
+        torch.FloatTensor: The generated amplitude-modulated chirp signal.
+
+    Example:
+        >>> theta = [torch.tensor(512.0), torch.tensor(8.0), torch.tensor(1.8)]
+        >>> signal = generate_am_chirp(theta, bw=5, duration=2, sr=44100, delta=100)
+        >>> signal.shape
+    """
     f_c, f_m, gamma = theta[0], theta[1], theta[2]
     t = torch.arange(-duration / 2, duration / 2, 1 / sr).type_as(f_m)
     carrier = sine(f_c / (gamma * np.log(2)) * (2 ** (gamma * t) - 1))
@@ -104,7 +124,7 @@ def _ripple(theta, duration, n_partials, sr, window=False):
     i = torch.arange(n_partials).to(device)[None, :]
     # space f0 and highest partial evenly in log domain (divided by # partials)
     f = (f0 * (fm1 / f0) ** (i / (n_partials - 1)))[:, :, None]
-    sphi = 0.0 #2 * torch.pi * torch.rand((1, n_partials, 1))
+    sphi = 0.0  # 2 * torch.pi * torch.rand((1, n_partials, 1))
     s = torch.sin(2 * torch.pi * f * t + sphi)
 
     # create envelope
@@ -147,8 +167,8 @@ def ripple(theta, duration, n_partials, sr, window=False):
     t = torch.linspace(0, duration, int(m)).to(device).reshape((1, -1))
     i = torch.arange(n_partials).to(device).reshape((n_partials, 1))
     # space f0 and highest partial evenly in log domain (divided by # partials)
-    f = (f0 * (fm1 / f0) ** (i / (n_partials - 1)))
-    sphi = 0#2 * torch.pi * torch.rand((1, n_partials, 1)).to(device)
+    f = f0 * (fm1 / f0) ** (i / (n_partials - 1))
+    sphi = 0  # 2 * torch.pi * torch.rand((1, n_partials, 1)).to(device)
     s = torch.sin(2 * torch.pi * f * t + sphi)
 
     # create envelope
@@ -157,12 +177,10 @@ def ripple(theta, duration, n_partials, sr, window=False):
     # a = 1.0 + delta * torch.sin(
     #     2 * torch.pi * w[:, :, None] * (t + x / (v[:, :, None])) + phi
     # )
-    a = 1.0 + delta * torch.sin(
-        2 * torch.pi * (w * t + x * omega) + phi
-    )
+    a = 1.0 + delta * torch.sin(2 * torch.pi * (w * t + x * omega) + phi)
     # win = torch.hann_window(duration * sr) if window else 1.0
     # create the waveform, summing partials
-    y = torch.sum(a * s, dim=0) # / torch.sqrt(f)
+    y = torch.sum(a * s, dim=0)  # / torch.sqrt(f)
     y = y / torch.sum(torch.abs(y))
 
     return y
