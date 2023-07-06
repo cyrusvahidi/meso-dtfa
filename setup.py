@@ -8,7 +8,7 @@ setup(
     author_email="c.vahidi@qmul.ac.uk",
     include_package_data=True,
     packages=['meso_dtfa'],
-    url="https://github.com/cyrusvahidi/meso_dtfa-gpu",
+    url="https://github.com/cyrusvahidi/meso-dtfa",
     install_requires=["gin-config",
                       "librosa", 
                       "torch",
